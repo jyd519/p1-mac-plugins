@@ -13,10 +13,6 @@ It contains three plugins:
  - **DisplayLink**: Uses display links from the Core Video framework to expose
    display vertical-sync events as P1stream video clocks.
 
-It is used to build P1stream itself and all native modules targetting it. It
-contains the public headers for P1stream, as well as build environment settings
-used by atom-shell, node.js, npm and node-gyp.
-
  [P1stream]: https://github.com/p1stream/p1stream
 
 ### License
