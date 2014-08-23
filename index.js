@@ -1,1 +1,1 @@
-module.exports = require('./mac_sources.node');
+module.exports = require('./build/Release/native.node');
