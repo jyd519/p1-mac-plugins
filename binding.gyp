@@ -6,10 +6,11 @@
                 '$(p1stream_include_dir)'
             ],
             'sources': [
-                'src/audio_queue.cc',
                 'src/display_link.cc',
                 'src/display_stream.cc',
-                'src/module.cc',
+                'src/detect_displays.cc',
+                'src/audio_queue.cc',
+                'src/module.cc'
             ],
             'xcode_settings': {
                 # 'MACOSX_DEPLOYMENT_TARGET': '10.8',  # FIXME: This doesn't work

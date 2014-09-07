@@ -16,10 +16,13 @@ using namespace p1stream;
 extern Eternal<String> display_id_sym;
 extern Eternal<String> divisor_sym;
 extern Eternal<String> device_sym;
+extern Eternal<String> width_sym;
+extern Eternal<String> height_sym;
+extern Eternal<String> on_change_sym;
 
 
 class display_link : public video_clock {
-private:
+public:
     Isolate *isolate;
     CVDisplayLinkRef cv_handle;
     lockable_mutex mutex;
@@ -38,7 +41,6 @@ private:
         void *context);
     void tick(frame_time_t time);
 
-public:
     // Public JavaScript methods.
     void init(const FunctionCallbackInfo<Value>& args);
     void destroy(bool unref = true);
@@ -57,7 +59,7 @@ public:
 
 
 class display_stream : public video_source {
-private:
+public:
     dispatch_queue_t dispatch;
     CGDisplayStreamRef cg_handle;
     lockable_mutex mutex;
@@ -69,7 +71,6 @@ private:
         CGDisplayStreamFrameStatus status,
         IOSurfaceRef frame);
 
-public:
     // Public JavaScript methods.
     void init(const FunctionCallbackInfo<Value>& args);
     void destroy(bool unref = true);
@@ -82,8 +83,29 @@ public:
 };
 
 
+class detect_displays : public ObjectWrap {
+public:
+    Isolate *isolate;
+    Persistent<Function> on_change;
+    main_loop_callback callback;
+
+    static void reconfigure_callback(
+       CGDirectDisplayID display,
+       CGDisplayChangeSummaryFlags flags,
+       void *userInfo);
+    void emit_change();
+
+    // Public JavaScript methods.
+    void init(const FunctionCallbackInfo<Value>& args);
+    void destroy(bool unref = true);
+
+    // Module init.
+    static void init_prototype(Handle<FunctionTemplate> func);
+};
+
+
 class audio_queue : public audio_source {
-private:
+public:
     static const UInt32 num_buffers = 3;
 
     Isolate *isolate;
@@ -100,7 +122,6 @@ private:
         UInt32 inNumberPacketDescriptions,
         const AudioStreamPacketDescription *inPacketDescs);
 
-public:
     // Public JavaScript methods.
     void init(const FunctionCallbackInfo<Value>& args);
     void destroy(bool unref = true);

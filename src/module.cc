@@ -6,6 +6,9 @@ namespace p1_mac_sources {
 Eternal<String> display_id_sym;
 Eternal<String> divisor_sym;
 Eternal<String> device_sym;
+Eternal<String> width_sym;
+Eternal<String> height_sym;
+Eternal<String> on_change_sym;
 
 
 static void display_link_constructor(const FunctionCallbackInfo<Value>& args)
@@ -20,14 +23,20 @@ static void display_stream_constructor(const FunctionCallbackInfo<Value>& args)
     stream->init(args);
 }
 
+static void detect_displays_constructor(const FunctionCallbackInfo<Value>& args)
+{
+    auto detect = new detect_displays();
+    detect->init(args);
+}
+
 static void audio_queue_constructor(const FunctionCallbackInfo<Value>& args)
 {
     auto queue = new audio_queue();
     queue->init(args);
 }
 
-static void init(v8::Handle<v8::Object> exports, v8::Handle<v8::Value> module,
-    v8::Handle<v8::Context> context, void* priv)
+static void init(Handle<Object> exports, Handle<Value> module,
+    Handle<Context> context, void* priv)
 {
     auto *isolate = context->GetIsolate();
     Handle<String> name;
@@ -37,6 +46,9 @@ static void init(v8::Handle<v8::Object> exports, v8::Handle<v8::Value> module,
     SYM(display_id_sym, "displayId");
     SYM(divisor_sym, "divisor");
     SYM(device_sym, "device");
+    SYM(width_sym, "width");
+    SYM(height_sym, "height");
+    SYM(on_change_sym, "onChange");
 #undef SYM
 
     name = String::NewFromUtf8(isolate, "DisplayLink");
@@ -51,6 +63,13 @@ static void init(v8::Handle<v8::Object> exports, v8::Handle<v8::Value> module,
     func->InstanceTemplate()->SetInternalFieldCount(1);
     func->SetClassName(name);
     display_link::init_prototype(func);
+    exports->Set(name, func->GetFunction());
+
+    name = String::NewFromUtf8(isolate, "DetectDisplays");
+    func = FunctionTemplate::New(isolate, detect_displays_constructor);
+    func->InstanceTemplate()->SetInternalFieldCount(1);
+    func->SetClassName(name);
+    detect_displays::init_prototype(func);
     exports->Set(name, func->GetFunction());
 
     name = String::NewFromUtf8(isolate, "AudioQueue");
