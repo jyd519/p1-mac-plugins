@@ -1,1 +1,4 @@
-module.exports = require('./build/Release/native.node');
+var native = require('./build/Release/native.node');
+
+module.exports = function(app) {
+};
