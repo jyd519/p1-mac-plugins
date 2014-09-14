@@ -105,22 +105,15 @@ lockable *display_link::lock()
     return mutex.lock();
 }
 
-bool display_link::link_video_clock(video_clock_context &ctx_)
+bool display_link::link_video_clock(video_clock_context &ctx)
 {
-    if (ctx != nullptr) {
-        isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate,
-            "DisplayLink can only link to one mixer")));
-        return false;
-    }
-
-    ctx = &ctx_;
+    ctxes.push_back(&ctx);
     return true;
 }
 
-void display_link::unlink_video_clock(video_clock_context &ctx_)
+void display_link::unlink_video_clock(video_clock_context &ctx)
 {
-    if (ctx == &ctx_)
-        ctx = nullptr;
+    ctxes.remove(&ctx);
 }
 
 fraction_t display_link::video_ticks_per_second(video_clock_context &ctx)
@@ -164,7 +157,7 @@ void display_link::tick(frame_time_t time)
     // Call mixer with lock.
     {
         lock_handle lock(mutex);
-        if (ctx != nullptr)
+        for (auto ctx : ctxes)
             ctx->tick(time);
     }
 }

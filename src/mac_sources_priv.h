@@ -3,6 +3,7 @@
 
 #include "p1stream.h"
 
+#include <list>
 #include <CoreVideo/CoreVideo.h>
 #include <AudioToolbox/AudioToolbox.h>
 
@@ -30,7 +31,7 @@ public:
     uint32_t divisor;
     uint32_t skip_counter;
 
-    video_clock_context *ctx;
+    std::list<video_clock_context *> ctxes;
 
     static CVReturn callback(
         CVDisplayLinkRef display_link,
@@ -49,8 +50,8 @@ public:
     virtual lockable *lock() final;
 
     // Video clock implementation.
-    virtual bool link_video_clock(video_clock_context &ctx_) final;
-    virtual void unlink_video_clock(video_clock_context &ctx_) final;
+    virtual bool link_video_clock(video_clock_context &ctx) final;
+    virtual void unlink_video_clock(video_clock_context &ctx) final;
     virtual fraction_t video_ticks_per_second(video_clock_context &ctx) final;
 
     // Module init.
@@ -112,7 +113,7 @@ public:
     AudioQueueRef queue;
     AudioQueueBufferRef buffers[num_buffers];
 
-    audio_source_context *ctx;
+    std::list<audio_source_context *> ctxes;
 
     static void input_callback(
         void *inUserData,

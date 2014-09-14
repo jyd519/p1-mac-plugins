@@ -114,22 +114,15 @@ void audio_queue::destroy(bool unref)
         Unref();
 }
 
-bool audio_queue::link_audio_source(audio_source_context &ctx_)
+bool audio_queue::link_audio_source(audio_source_context &ctx)
 {
-    if (ctx != nullptr) {
-        isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate,
-                    "AudioQueue can only link to one mixer")));
-        return false;
-    }
-
-    ctx = &ctx_;
+    ctxes.push_back(&ctx);
     return true;
 }
 
-void audio_queue::unlink_audio_source(audio_source_context &ctx_)
+void audio_queue::unlink_audio_source(audio_source_context &ctx)
 {
-    if (ctx == &ctx_)
-        ctx = nullptr;
+    ctxes.remove(&ctx);
 }
 
 void audio_queue::input_callback(
@@ -140,10 +133,12 @@ void audio_queue::input_callback(
     UInt32 inNumberPacketDescriptions,
     const AudioStreamPacketDescription *inPacketDescs)
 {
-    auto *ctx = ((audio_queue *) inUserData)->ctx;
-    if (ctx)
-        ctx->render_buffer(inStartTime->mHostTime, (float *) inBuffer->mAudioData,
-                           inBuffer->mAudioDataByteSize / sample_size);
+    auto time = inStartTime->mHostTime;
+    auto in = (float *)inBuffer->mAudioData;
+    auto samples = inBuffer->mAudioDataByteSize / sample_size;
+
+    for (auto ctx : ((audio_queue *) inUserData)->ctxes)
+        ctx->render_buffer(time, in, samples);
 
     OSStatus ret = AudioQueueEnqueueBuffer(inAQ, inBuffer, 0, NULL);
     if (ret != noErr)
