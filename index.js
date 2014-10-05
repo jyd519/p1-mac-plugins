@@ -1,12 +1,12 @@
-module.exports = function(app) {
+module.exports = function(scope) {
     var native = require('./build/Release/native.node');
 
-    var pdata = app.data.p.p1_mac_sources = {};
+    var pdata = scope.data.p.p1_mac_sources = {};
 
     var monitor = new native.DetectDisplays({
         onChange: function(list) {
             pdata.displays = list;
-            app.data.$mark();
+            scope.$mark();
         }
     });
 };
