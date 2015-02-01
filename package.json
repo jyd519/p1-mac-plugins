@@ -8,5 +8,8 @@
         "type": "git",
         "url": "http://github.com/p1stream/p1-mac-sources.git"
     },
-    "main": "index.js"
+    "main": "index.js",
+    "dependencies": {
+        "underscore": "1"
+    }
 }
