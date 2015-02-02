@@ -15,6 +15,12 @@
             'xcode_settings': {
                 # 'MACOSX_DEPLOYMENT_TARGET': '10.8',  # FIXME: This doesn't work
                 'OTHER_CFLAGS': ['-mmacosx-version-min=10.8', '-std=c++11', '-stdlib=libc++']
+            },
+            'link_settings': {
+                'libraries': [
+                    '$(SDKROOT)/System/Library/Frameworks/CoreGraphics.framework',
+                    '$(SDKROOT)/System/Library/Frameworks/OpenCL.framework'
+                ]
             }
         }
     ]
