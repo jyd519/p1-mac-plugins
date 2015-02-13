@@ -62,7 +62,7 @@ static void init(Handle<Object> exports, Handle<Value> module,
     func = FunctionTemplate::New(isolate, display_stream_constructor);
     func->InstanceTemplate()->SetInternalFieldCount(1);
     func->SetClassName(name);
-    display_link::init_prototype(func);
+    display_stream::init_prototype(func);
     exports->Set(name, func->GetFunction());
 
     name = String::NewFromUtf8(isolate, "DetectDisplays");
