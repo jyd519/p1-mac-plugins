@@ -36,7 +36,7 @@ void detect_displays::init(const FunctionCallbackInfo<Value>& args)
         cg_ret = CGDisplayRegisterReconfigurationCallback(
                 reconfigure_callback, this);
         if (!(ok = (cg_ret == kCGErrorSuccess)))
-            sprintf(err, "CGDisplayRegisterReconfigurationCallback error %d", cg_ret);
+            sprintf(err, "CGDisplayRegisterReconfigurationCallback error 0x%x", cg_ret);
     }
 
     if (ok) {
@@ -72,14 +72,14 @@ void detect_displays::emit_change()
     uint32_t count;
     cg_ret = CGGetOnlineDisplayList(0, NULL, &count);
     if (cg_ret != kCGErrorSuccess) {
-        fprintf(stderr, "CGGetOnlineDisplayList error %d", cg_ret);
+        fprintf(stderr, "CGGetOnlineDisplayList error 0x%x", cg_ret);
         return;
     }
 
     uint32_t ids[count];
     cg_ret = CGGetOnlineDisplayList(count, ids, &count);
     if (cg_ret != kCGErrorSuccess) {
-        fprintf(stderr, "CGGetOnlineDisplayList error %d", cg_ret);
+        fprintf(stderr, "CGGetOnlineDisplayList error 0x%x", cg_ret);
         return;
     }
 

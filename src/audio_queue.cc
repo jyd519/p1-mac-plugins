@@ -44,7 +44,7 @@ void audio_queue::init(const FunctionCallbackInfo<Value>& args)
     if (ok) {
         os_ret = AudioQueueNewInput(&fmt, input_callback, this, NULL, kCFRunLoopCommonModes, 0, &queue);
         if (!(ok = (os_ret == noErr)))
-            sprintf(err, "AudioQueueNewInput error %d", os_ret);
+            sprintf(err, "AudioQueueNewInput error 0x%x", os_ret);
     }
 
     if (ok && !params.IsEmpty()) {
@@ -62,7 +62,7 @@ void audio_queue::init(const FunctionCallbackInfo<Value>& args)
                 os_ret = AudioQueueSetProperty(queue, kAudioQueueProperty_CurrentDevice, &str, sizeof(str));
                 CFRelease(str);
                 if (!(ok = (os_ret == noErr)))
-                    sprintf(err, "AudioQueueSetProperty error %d", os_ret);
+                    sprintf(err, "AudioQueueSetProperty error 0x%x", os_ret);
             }
         }
     }
@@ -71,13 +71,13 @@ void audio_queue::init(const FunctionCallbackInfo<Value>& args)
         for (UInt32 i = 0; i < num_buffers; i++) {
             os_ret = AudioQueueAllocateBuffer(queue, 0x5000, &buffers[i]);
             if (!(ok = (os_ret == noErr))) {
-                sprintf(err, "AudioQueueAllocateBuffer error %d", os_ret);
+                sprintf(err, "AudioQueueAllocateBuffer error 0x%x", os_ret);
                 break;
             }
 
             os_ret = AudioQueueEnqueueBuffer(queue, buffers[i], 0, NULL);
             if (!(ok = (os_ret == noErr))) {
-                sprintf(err, "AudioQueueEnqueueBuffer error %d", os_ret);
+                sprintf(err, "AudioQueueEnqueueBuffer error 0x%x", os_ret);
                 AudioQueueFreeBuffer(queue, buffers[i]);
                 break;
             }
@@ -88,7 +88,7 @@ void audio_queue::init(const FunctionCallbackInfo<Value>& args)
         // Async, waits until running callback.
         os_ret = AudioQueueStart(queue, NULL);
         if (!(ok = (os_ret == noErr)))
-            sprintf(err, "AudioQueueStart error %d", os_ret);
+            sprintf(err, "AudioQueueStart error 0x%x", os_ret);
     }
 
     if (ok) {
@@ -107,7 +107,7 @@ void audio_queue::destroy(bool unref)
         OSStatus ret = AudioQueueDispose(queue, FALSE);
         queue = NULL;
         if (ret != noErr)
-            fprintf(stderr, "AudioQueueDispose error %d\n", ret);
+            fprintf(stderr, "AudioQueueDispose error 0x%x\n", ret);
     }
 
     if (unref)
@@ -142,7 +142,7 @@ void audio_queue::input_callback(
 
     OSStatus ret = AudioQueueEnqueueBuffer(inAQ, inBuffer, 0, NULL);
     if (ret != noErr)
-        fprintf(stderr, "AudioQueueEnqueueBuffer error %d\n", ret);
+        fprintf(stderr, "AudioQueueEnqueueBuffer error 0x%x\n", ret);
 }
 
 void audio_queue::init_prototype(Handle<FunctionTemplate> func)

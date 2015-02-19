@@ -53,19 +53,19 @@ void display_link::init(const FunctionCallbackInfo<Value>& args)
     if (ok) {
         cv_ret = CVDisplayLinkCreateWithCGDisplay(display_id, &cv_handle);
         if (!(ok = (cv_ret == kCVReturnSuccess)))
-            sprintf(err, "CVDisplayLinkCreateWithCGDisplay error %d", cv_ret);
+            sprintf(err, "CVDisplayLinkCreateWithCGDisplay error 0x%x", cv_ret);
     }
 
     if (ok) {
         cv_ret = CVDisplayLinkSetOutputCallback(cv_handle, callback, this);
         if (!(ok = (cv_ret == kCVReturnSuccess)))
-            sprintf(err, "CVDisplayLinkSetOutputCallback error %d", cv_ret);
+            sprintf(err, "CVDisplayLinkSetOutputCallback error 0x%x", cv_ret);
     }
 
     if (ok) {
         cv_ret = CVDisplayLinkStart(cv_handle);
         if (!(ok = (cv_ret == kCVReturnSuccess)))
-            sprintf(err, "CVDisplayLinkStart error %d", cv_ret);
+            sprintf(err, "CVDisplayLinkStart error 0x%x", cv_ret);
         else
             running = true;
     }
@@ -87,7 +87,7 @@ void display_link::destroy(bool unref)
     if (running) {
         cv_ret = CVDisplayLinkStop(cv_handle);
         if (cv_ret != kCVReturnSuccess)
-            fprintf(stderr, "CVDisplayLinkStop error %d\n", cv_ret);
+            fprintf(stderr, "CVDisplayLinkStop error 0x%x\n", cv_ret);
         running = false;
     }
 

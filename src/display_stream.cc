@@ -64,7 +64,7 @@ void display_stream::init(const FunctionCallbackInfo<Value>& args)
     if (ok) {
         cg_ret = CGDisplayStreamStart(cg_handle);
         if (!(ok = (cg_ret == kCGErrorSuccess)))
-            sprintf(err, "CGDisplayStreamStart error %d", cg_ret);
+            sprintf(err, "CGDisplayStreamStart error 0x%x", cg_ret);
         else
             running = true;
     }
@@ -86,7 +86,7 @@ void display_stream::destroy(bool unref)
     if (running) {
         cg_ret = CGDisplayStreamStop(cg_handle);
         if (cg_ret != kCGErrorSuccess)
-            fprintf(stderr, "CGDisplayStreamStop error %d\n", cg_ret);
+            fprintf(stderr, "CGDisplayStreamStop error 0x%x\n", cg_ret);
         running = false;
     }
 
