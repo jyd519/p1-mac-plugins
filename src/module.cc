@@ -78,6 +78,10 @@ static void init(Handle<Object> exports, Handle<Value> module,
     func->SetClassName(name);
     audio_queue::init_prototype(func);
     exports->Set(name, func->GetFunction());
+
+    name = String::NewFromUtf8(isolate, "startPreviewService");
+    func = FunctionTemplate::New(isolate, start_preview_service);
+    exports->Set(name, func->GetFunction());
 }
 
 

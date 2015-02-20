@@ -80,4 +80,22 @@ module.exports = function(scope) {
             }
         });
     });
+
+    // Handle preview connections.
+    native.startPreviewService(function(id, hook) {
+        var obj = id && id[0] !== '$' && scope.o[id];
+        if (!obj || obj.cfg.type !== 'mixer')
+            return hook.destroy();
+
+        hook.onClose = destroy;
+        var cancel = obj.$addFrameListener({
+            hook: hook,
+            $destroy: destroy
+        });
+
+        function destroy() {
+            cancel();
+            hook.destroy();
+        }
+    });
 };

@@ -10,6 +10,7 @@
                 'src/display_stream.cc',
                 'src/detect_displays.cc',
                 'src/audio_queue.cc',
+                'src/preview_service.cc',
                 'src/module.cc'
             ],
             'xcode_settings': {

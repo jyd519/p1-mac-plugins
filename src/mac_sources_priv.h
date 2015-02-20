@@ -2,6 +2,7 @@
 #define p1_mac_sources_priv_h
 
 #include "p1stream.h"
+#include "p1stream_mac_preview.h"
 
 #include <list>
 #include <CoreVideo/CoreVideo.h>
@@ -134,6 +135,74 @@ public:
     // Module init.
     static void init_prototype(Handle<FunctionTemplate> func);
 };
+
+
+#define PREVIEW_MAX_PENDING 4
+
+struct request_msg_rcv_t {
+    mach_msg_header_t header;
+    char mixer_id[128];
+    mach_msg_trailer_t trailer;
+};
+
+typedef mach_msg_empty_send_t set_surface_msg_send_t;
+
+typedef mach_msg_empty_send_t updated_msg_send_t;
+
+struct preview_pending_client_t {
+    char mixer_id[128];
+    mach_port_t client_port;
+};
+
+class preview_service : public lockable_mutex {
+private:
+    Isolate *isolate;
+    Persistent<Context> context;
+    Persistent<Function> on_request;
+    Persistent<ObjectTemplate> hook_template;
+
+    threaded_loop thread;
+    void thread_loop();
+    mach_port_t get_service_port();
+
+    main_loop_callback callback;
+    preview_pending_client_t pending[PREVIEW_MAX_PENDING];
+    size_t num_pending;
+    void emit_pending();
+
+public:
+    void init(Isolate *isolate_, Handle<Function> on_request_);
+};
+
+class preview_client : public video_hook {
+private:
+    Isolate *isolate;
+    Persistent<Context> context;
+
+    mach_port_t client_port;
+
+    main_loop_callback callback;
+    void emit_error();
+
+    void send_set_surface_msg(mach_port_t surface_port);
+    void send_msg(mach_msg_header_t *msgh);
+    void close_port();
+
+public:
+    // Public JavaScript methods.
+    void init(Isolate *isolate_, Handle<Object> obj, mach_port_t client_port_);
+    void destroy();
+
+    // Video hook implementation.
+    virtual bool link_video_hook(video_hook_context &ctx) final;
+    virtual void unlink_video_hook(video_hook_context &ctx) final;
+    virtual void video_post_render(video_hook_context &ctx) final;
+
+    // Module init.
+    static void init_template(Handle<ObjectTemplate> tmpl);
+};
+
+void start_preview_service(const FunctionCallbackInfo<Value>& args);
 
 
 }  // namespace p1_mac_sources
