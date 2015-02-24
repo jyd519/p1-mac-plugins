@@ -19,4 +19,4 @@ It contains three plugins:
 
 [GPLv3](LICENSE)
 
-© 2014 — Stéphan Kochen
+© 2015  — Stéphan Kochen
