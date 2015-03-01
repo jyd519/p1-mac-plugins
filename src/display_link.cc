@@ -105,10 +105,9 @@ lockable *display_link::lock()
     return mutex.lock();
 }
 
-bool display_link::link_video_clock(video_clock_context &ctx)
+void display_link::link_video_clock(video_clock_context &ctx)
 {
     ctxes.push_back(&ctx);
-    return true;
 }
 
 void display_link::unlink_video_clock(video_clock_context &ctx)

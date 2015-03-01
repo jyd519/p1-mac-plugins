@@ -231,7 +231,7 @@ void preview_client::close_port()
         fprintf(stderr, "mach_port_deallocate error 0x%x on client port\n", kret);
 }
 
-bool preview_client::link_video_hook(video_hook_context &ctx)
+void preview_client::link_video_hook(video_hook_context &ctx)
 {
     mach_port_t port = IOSurfaceCreateMachPort(ctx.mixer()->surface());
     send_set_surface_msg(port);
@@ -239,8 +239,6 @@ bool preview_client::link_video_hook(video_hook_context &ctx)
     kern_return_t kret = mach_port_deallocate(mach_task_self(), port);
     if (kret != KERN_SUCCESS)
         fprintf(stderr, "mach_port_deallocate error 0x%x on surface port\n", kret);
-
-    return true;
 }
 
 void preview_client::unlink_video_hook(video_hook_context &ctx)

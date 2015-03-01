@@ -114,10 +114,9 @@ void audio_queue::destroy(bool unref)
         Unref();
 }
 
-bool audio_queue::link_audio_source(audio_source_context &ctx)
+void audio_queue::link_audio_source(audio_source_context &ctx)
 {
     ctxes.push_back(&ctx);
-    return true;
 }
 
 void audio_queue::unlink_audio_source(audio_source_context &ctx)

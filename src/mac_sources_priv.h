@@ -51,7 +51,7 @@ public:
     virtual lockable *lock() final;
 
     // Video clock implementation.
-    virtual bool link_video_clock(video_clock_context &ctx) final;
+    virtual void link_video_clock(video_clock_context &ctx) final;
     virtual void unlink_video_clock(video_clock_context &ctx) final;
     virtual fraction_t video_ticks_per_second(video_clock_context &ctx) final;
 
@@ -129,7 +129,7 @@ public:
     void destroy(bool unref = true);
 
     // Audio source implementation.
-    virtual bool link_audio_source(audio_source_context &ctx) final;
+    virtual void link_audio_source(audio_source_context &ctx) final;
     virtual void unlink_audio_source(audio_source_context &ctx) final;
 
     // Module init.
@@ -194,7 +194,7 @@ public:
     void destroy();
 
     // Video hook implementation.
-    virtual bool link_video_hook(video_hook_context &ctx) final;
+    virtual void link_video_hook(video_hook_context &ctx) final;
     virtual void unlink_video_hook(video_hook_context &ctx) final;
     virtual void video_post_render(video_hook_context &ctx) final;
 
