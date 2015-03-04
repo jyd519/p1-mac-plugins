@@ -20,9 +20,17 @@ module.exports = function(scope) {
 
         // Set detected displays on the root.
         obj.$monitor = new native.DetectDisplays({
-            onChange: function(list) {
-                obj.displays = list;
-                obj.$mark();
+            onEvent: function(id, arg) {
+                switch (id) {
+                    case native.EV_DISPLAYS_CHANGED:
+                        obj.displays = arg;
+                        obj.$mark();
+                        break;
+
+                    default:
+                        scope.handleNativeEvent(obj, id, arg);
+                        break;
+                }
             }
         });
     });
@@ -33,11 +41,14 @@ module.exports = function(scope) {
             start: function() {
                 try {
                     obj.$instance = new native.AudioQueue({
-                        device: obj.cfg.device
+                        device: obj.cfg.device,
+                        onEvent: function(id, arg) {
+                            scope.handleNativeEvent(obj, id, arg);
+                        }
                     });
                 }
                 catch (err) {
-                    // FIXME: log error
+                    obj.$log.error(err, "Failed to instantiate AudioQueue");
                     obj.hasError = true;
                 }
                 obj.$mark();
@@ -64,11 +75,14 @@ module.exports = function(scope) {
             start: function() {
                 try {
                     obj.$instance = new native.DisplayStream({
-                        displayId: obj.cfg.displayId
+                        displayId: obj.cfg.displayId,
+                        onEvent: function(id, arg) {
+                            scope.handleNativeEvent(obj, id, arg);
+                        }
                     });
                 }
                 catch (err) {
-                    // FIXME: log error
+                    obj.$log.error(err, "Failed to instantiate DisplayStream");
                     obj.hasError = true;
                 }
                 obj.$mark();
@@ -82,7 +96,23 @@ module.exports = function(scope) {
     });
 
     // Handle preview connections.
-    native.startPreviewService(function(id, hook) {
+    native.startPreviewService({
+        name: "com.p1stream.P1stream.preview",
+        onEvent: function(id, arg) {
+            switch (id) {
+                case native.EV_PREVIEW_REQUEST:
+                    connectHook(arg);
+                    break;
+
+                default:
+                    scope.handleNativeEvent(obj, id, arg);
+                    break;
+            }
+        }
+    });
+    function connectHook(hook) {
+        var id = hook.mixerId;
+
         var obj = id && id[0] !== '$' && scope.o[id];
         if (!obj || obj.cfg.type !== 'mixer')
             return hook.destroy();
@@ -97,5 +127,5 @@ module.exports = function(scope) {
             cancel();
             hook.destroy();
         }
-    });
+    }
 };

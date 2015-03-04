@@ -3,12 +3,16 @@
 namespace p1_mac_sources {
 
 
+Eternal<String> on_event_sym;
 Eternal<String> display_id_sym;
 Eternal<String> divisor_sym;
 Eternal<String> device_sym;
 Eternal<String> width_sym;
 Eternal<String> height_sym;
-Eternal<String> on_change_sym;
+Eternal<String> name_sym;
+Eternal<String> mixer_id_sym;
+
+Persistent<ObjectTemplate> hook_tmpl;
 
 
 static void display_link_constructor(const FunctionCallbackInfo<Value>& args)
@@ -42,13 +46,18 @@ static void init(Handle<Object> exports, Handle<Value> module,
     Handle<String> name;
     Handle<FunctionTemplate> func;
 
+    NODE_DEFINE_CONSTANT(exports, EV_DISPLAYS_CHANGED);
+    NODE_DEFINE_CONSTANT(exports, EV_PREVIEW_REQUEST);
+
 #define SYM(handle, value) handle.Set(isolate, String::NewFromUtf8(isolate, value))
+    SYM(on_event_sym, "onEvent");
     SYM(display_id_sym, "displayId");
     SYM(divisor_sym, "divisor");
     SYM(device_sym, "device");
     SYM(width_sym, "width");
     SYM(height_sym, "height");
-    SYM(on_change_sym, "onChange");
+    SYM(name_sym, "name");
+    SYM(mixer_id_sym, "mixerId");
 #undef SYM
 
     name = String::NewFromUtf8(isolate, "DisplayLink");
@@ -80,8 +89,13 @@ static void init(Handle<Object> exports, Handle<Value> module,
     exports->Set(name, func->GetFunction());
 
     name = String::NewFromUtf8(isolate, "startPreviewService");
-    func = FunctionTemplate::New(isolate, start_preview_service);
+    func = FunctionTemplate::New(isolate, preview_service::start);
     exports->Set(name, func->GetFunction());
+
+    auto tmpl = ObjectTemplate::New(isolate);
+    tmpl->SetInternalFieldCount(1);
+    preview_client::init_template(tmpl);
+    hook_tmpl.Reset(isolate, tmpl);
 }
 
 

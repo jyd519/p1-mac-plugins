@@ -2,93 +2,105 @@
 
 namespace p1_mac_sources {
 
+static CVReturn display_link_callback(
+    CVDisplayLinkRef cv_handle,
+    const CVTimeStamp *now,
+    const CVTimeStamp *output_time,
+    CVOptionFlags flags_in,
+    CVOptionFlags *flags_out,
+    void *context);
+
+
+display_link::display_link() :
+    buffer(this), cv_handle(NULL), running(false), skip_counter(0)
+{
+}
 
 void display_link::init(const FunctionCallbackInfo<Value>& args)
 {
-    bool ok = true;
-    char err[128];
-
-    CVReturn cv_ret;
-
-    Handle<Object> params;
+    auto *isolate = args.GetIsolate();
     Handle<Value> val;
-
-    Wrap(args.This());
-    args.GetReturnValue().Set(handle());
-    isolate = args.GetIsolate();
-
     CGDirectDisplayID display_id = kCGDirectMainDisplay;
-    divisor = 1;
 
-    if (args.Length() == 1) {
-        if (!(ok = args[0]->IsObject()))
-            strcpy(err, "Expected an object");
-        else
-            params = Local<Object>::Cast(args[0]);
-
-        if (ok) {
-            val = params->Get(display_id_sym.Get(isolate));
-            if (!val->IsUndefined()) {
-                if (!(ok = val->IsUint32()))
-                    strcpy(err, "Invalid display ID");
-                else
-                    display_id = val->Uint32Value();
-            }
-        }
-
-        if (ok) {
-            val = params->Get(divisor_sym.Get(isolate));
-            if (!val->IsUndefined()) {
-                if (val->IsUint32())
-                    divisor = val->Uint32Value();
-                else
-                    divisor = 0;
-
-                if (!(ok = (divisor >= 1)))
-                    strcpy(err, "Invalid divisor value");
-            }
-        }
+    if (args.Length() != 1 || !args[0]->IsObject()) {
+        isolate->ThrowException(Exception::TypeError(
+            String::NewFromUtf8(isolate, "Expected an object")));
+        return;
     }
+    auto params = args[0].As<Object>();
 
-    if (ok) {
-        cv_ret = CVDisplayLinkCreateWithCGDisplay(display_id, &cv_handle);
-        if (!(ok = (cv_ret == kCVReturnSuccess)))
-            sprintf(err, "CVDisplayLinkCreateWithCGDisplay error 0x%x", cv_ret);
+    val = params->Get(display_id_sym.Get(isolate));
+    if (val->IsUint32()) {
+        display_id = val->Uint32Value();
     }
-
-    if (ok) {
-        cv_ret = CVDisplayLinkSetOutputCallback(cv_handle, callback, this);
-        if (!(ok = (cv_ret == kCVReturnSuccess)))
-            sprintf(err, "CVDisplayLinkSetOutputCallback error 0x%x", cv_ret);
-    }
-
-    if (ok) {
-        cv_ret = CVDisplayLinkStart(cv_handle);
-        if (!(ok = (cv_ret == kCVReturnSuccess)))
-            sprintf(err, "CVDisplayLinkStart error 0x%x", cv_ret);
-        else
-            running = true;
-    }
-
-    if (ok) {
-        Ref();
+    else if (val->IsUndefined()) {
+        display_id = kCGDirectMainDisplay;
     }
     else {
-        destroy(false);
-        isolate->ThrowException(Exception::Error(
-                    String::NewFromUtf8(isolate, err)));
+        isolate->ThrowException(Exception::TypeError(
+            String::NewFromUtf8(isolate, "Invalid display ID")));
+        return;
     }
-}
 
-void display_link::destroy(bool unref)
-{
+    val = params->Get(divisor_sym.Get(isolate));
+    if (val->IsUint32())
+        divisor = val->Uint32Value();
+    else if (val->IsUndefined())
+        divisor = 1;
+    else
+        divisor = 0;
+
+    if (divisor == 0) {
+        isolate->ThrowException(Exception::TypeError(
+            String::NewFromUtf8(isolate, "Invalid divisor value")));
+        return;
+    }
+
+    val = params->Get(on_event_sym.Get(isolate));
+    if (!val->IsFunction()) {
+        isolate->ThrowException(Exception::TypeError(
+            String::NewFromUtf8(isolate, "Expected an onEvent function")));
+        return;
+    }
+
+    // Parameters checked, from here on we no longer throw exceptions.
+    Wrap(args.This());
+    Ref();
+    args.GetReturnValue().Set(handle());
+
+    buffer.set_callback(isolate->GetCurrentContext(), val.As<Function>());
+
     CVReturn cv_ret;
 
+    cv_ret = CVDisplayLinkCreateWithCGDisplay(display_id, &cv_handle);
+    if (cv_ret != kCVReturnSuccess) {
+        buffer.emitf(EV_LOG_ERROR, "CVDisplayLinkCreateWithCGDisplay error 0x%x", cv_ret);
+        return;
+    }
+
+    cv_ret = CVDisplayLinkSetOutputCallback(cv_handle, display_link_callback, this);
+    if (cv_ret != kCVReturnSuccess) {
+        buffer.emitf(EV_LOG_ERROR, "CVDisplayLinkSetOutputCallback error 0x%x", cv_ret);
+        return;
+    }
+
+    cv_ret = CVDisplayLinkStart(cv_handle);
+    if (cv_ret != kCVReturnSuccess) {
+        buffer.emitf(EV_LOG_ERROR, "CVDisplayLinkStart error 0x%x", cv_ret);
+        return;
+    }
+
+    running = true;
+}
+
+void display_link::destroy()
+{
     if (running) {
-        cv_ret = CVDisplayLinkStop(cv_handle);
-        if (cv_ret != kCVReturnSuccess)
-            fprintf(stderr, "CVDisplayLinkStop error 0x%x\n", cv_ret);
         running = false;
+
+        auto cv_ret = CVDisplayLinkStop(cv_handle);
+        if (cv_ret != kCVReturnSuccess)
+            buffer.emitf(EV_LOG_ERROR, "CVDisplayLinkStop error 0x%x\n", cv_ret);
     }
 
     if (cv_handle != NULL) {
@@ -96,8 +108,9 @@ void display_link::destroy(bool unref)
         cv_handle = NULL;
     }
 
-    if (unref)
-        Unref();
+    buffer.flush();
+
+    Unref();
 }
 
 lockable *display_link::lock()
@@ -132,7 +145,7 @@ fraction_t display_link::video_ticks_per_second(video_clock_context &ctx)
     }
 }
 
-CVReturn display_link::callback(
+static CVReturn display_link_callback(
     CVDisplayLinkRef cv_handle,
     const CVTimeStamp *now,
     const CVTimeStamp *output_time,
@@ -140,25 +153,23 @@ CVReturn display_link::callback(
     CVOptionFlags *flags_out,
     void *context)
 {
-    auto *link = (display_link *) context;
-    link->tick(now->hostTime);
-    return kCVReturnSuccess;
-}
+    auto &link = *(display_link *) context;
 
-void display_link::tick(frame_time_t time)
-{
     // Skip tick based on divisor.
-    if (skip_counter == divisor)
-        skip_counter = 0;
-    if (skip_counter++ != 0)
-        return;
+    if (link.skip_counter == link.divisor)
+        link.skip_counter = 0;
+    if (link.skip_counter++ != 0)
+        return kCVReturnSuccess;
 
     // Call mixer with lock.
     {
-        lock_handle lock(mutex);
-        for (auto ctx : ctxes)
+        lock_handle lock(link);
+        auto time = now->hostTime;
+        for (auto ctx : link.ctxes)
             ctx->tick(time);
     }
+
+    return kCVReturnSuccess;
 }
 
 void display_link::init_prototype(Handle<FunctionTemplate> func)

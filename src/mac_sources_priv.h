@@ -10,42 +10,44 @@
 
 namespace p1_mac_sources {
 
+#define EV_DISPLAYS_CHANGED 'disp'
+#define EV_PREVIEW_REQUEST  'view'
+
 using namespace v8;
 using namespace node;
 using namespace p1stream;
 
 
+extern Eternal<String> on_event_sym;
 extern Eternal<String> display_id_sym;
 extern Eternal<String> divisor_sym;
 extern Eternal<String> device_sym;
 extern Eternal<String> width_sym;
 extern Eternal<String> height_sym;
-extern Eternal<String> on_change_sym;
+extern Eternal<String> name_sym;
+extern Eternal<String> mixer_id_sym;
+
+extern Persistent<ObjectTemplate> hook_tmpl;
 
 
 class display_link : public video_clock {
 public:
-    Isolate *isolate;
-    CVDisplayLinkRef cv_handle;
+    display_link();
+
     lockable_mutex mutex;
-    bool running;
+    event_buffer buffer;
+
     uint32_t divisor;
+
+    CVDisplayLinkRef cv_handle;
+    bool running;
     uint32_t skip_counter;
 
     std::list<video_clock_context *> ctxes;
 
-    static CVReturn callback(
-        CVDisplayLinkRef display_link,
-        const CVTimeStamp *now,
-        const CVTimeStamp *output_time,
-        CVOptionFlags flags_in,
-        CVOptionFlags *flags_out,
-        void *context);
-    void tick(frame_time_t time);
-
     // Public JavaScript methods.
     void init(const FunctionCallbackInfo<Value>& args);
-    void destroy(bool unref = true);
+    void destroy();
 
     // Lockable implementation.
     virtual lockable *lock() final;
@@ -60,22 +62,25 @@ public:
 };
 
 
-class display_stream : public video_source {
+class display_stream : public video_source, public lockable {
 public:
+    display_stream();
+
+    lockable_mutex mutex;
+    event_buffer buffer;
+
     dispatch_queue_t dispatch;
     CGDisplayStreamRef cg_handle;
-    lockable_mutex mutex;
     bool running;
 
     IOSurfaceRef last_frame;
 
-    void callback(
-        CGDisplayStreamFrameStatus status,
-        IOSurfaceRef frame);
-
     // Public JavaScript methods.
     void init(const FunctionCallbackInfo<Value>& args);
-    void destroy(bool unref = true);
+    void destroy();
+
+    // Lockable implementation.
+    virtual lockable *lock() final;
 
     // Video source implementation.
     virtual void produce_video_frame(video_source_context &ctx) final;
@@ -85,48 +90,50 @@ public:
 };
 
 
-class detect_displays : public ObjectWrap {
+class detect_displays : public ObjectWrap, public lockable {
 public:
-    Isolate *isolate;
-    Persistent<Function> on_change;
-    main_loop_callback callback;
+    detect_displays();
 
-    static void reconfigure_callback(
-       CGDirectDisplayID display,
-       CGDisplayChangeSummaryFlags flags,
-       void *userInfo);
+    lockable_mutex mutex;
+    event_buffer buffer;
+
+    bool running;
+
+    // Internal.
     void emit_change();
 
     // Public JavaScript methods.
     void init(const FunctionCallbackInfo<Value>& args);
-    void destroy(bool unref = true);
+    void destroy();
+
+    // Lockable implementation.
+    virtual lockable *lock() final;
 
     // Module init.
     static void init_prototype(Handle<FunctionTemplate> func);
 };
 
 
-class audio_queue : public audio_source {
+class audio_queue : public audio_source, public lockable {
 public:
     static const UInt32 num_buffers = 3;
 
-    Isolate *isolate;
-    AudioQueueRef queue;
-    AudioQueueBufferRef buffers[num_buffers];
+    audio_queue();
+
+    lockable_mutex mutex;
+    event_buffer buffer;
 
     std::list<audio_source_context *> ctxes;
 
-    static void input_callback(
-        void *inUserData,
-        AudioQueueRef inAQ,
-        AudioQueueBufferRef inBuffer,
-        const AudioTimeStamp *inStartTime,
-        UInt32 inNumberPacketDescriptions,
-        const AudioStreamPacketDescription *inPacketDescs);
+    AudioQueueRef queue;
+    AudioQueueBufferRef buffers[num_buffers];
 
     // Public JavaScript methods.
     void init(const FunctionCallbackInfo<Value>& args);
-    void destroy(bool unref = true);
+    void destroy();
+
+    // Lockable implementation.
+    virtual lockable *lock() final;
 
     // Audio source implementation.
     virtual void link_audio_source(audio_source_context &ctx) final;
@@ -137,58 +144,43 @@ public:
 };
 
 
-#define PREVIEW_MAX_PENDING 4
+class preview_service : public lockable {
+public:
+    preview_service();
 
-struct request_msg_rcv_t {
-    mach_msg_header_t header;
-    char mixer_id[128];
-    mach_msg_trailer_t trailer;
-};
+    lockable_mutex mutex;
+    event_buffer buffer;
 
-typedef mach_msg_empty_send_t set_surface_msg_send_t;
-
-typedef mach_msg_empty_send_t updated_msg_send_t;
-
-struct preview_pending_client_t {
-    char mixer_id[128];
-    mach_port_t client_port;
-};
-
-class preview_service : public lockable_mutex {
-private:
-    Isolate *isolate;
-    Persistent<Context> context;
-    Persistent<Function> on_request;
+    char name[BOOTSTRAP_MAX_NAME_LEN];
     Persistent<ObjectTemplate> hook_template;
 
     threaded_loop thread;
     void thread_loop();
+
+    // Internal.
     mach_port_t get_service_port();
 
-    main_loop_callback callback;
-    preview_pending_client_t pending[PREVIEW_MAX_PENDING];
-    size_t num_pending;
-    void emit_pending();
+    // Public JavaScript methods.
+    void init(const FunctionCallbackInfo<Value>& args);
+    static void start(const FunctionCallbackInfo<Value>& args);
 
-public:
-    void init(Isolate *isolate_, Handle<Function> on_request_);
+    // Lockable implementation.
+    virtual lockable *lock() final;
 };
 
 class preview_client : public video_hook {
-private:
+public:
+    uv_async_t async;
+
     Isolate *isolate;
     Persistent<Context> context;
 
     mach_port_t client_port;
-
-    main_loop_callback callback;
-    void emit_error();
 
     void send_set_surface_msg(mach_port_t surface_port);
     void send_msg(mach_msg_header_t *msgh);
     void close_port();
 
-public:
     // Public JavaScript methods.
     void init(Isolate *isolate_, Handle<Object> obj, mach_port_t client_port_);
     void destroy();
@@ -201,8 +193,6 @@ public:
     // Module init.
     static void init_template(Handle<ObjectTemplate> tmpl);
 };
-
-void start_preview_service(const FunctionCallbackInfo<Value>& args);
 
 
 }  // namespace p1_mac_sources
