@@ -1,6 +1,8 @@
 var _ = require('underscore');
 var native = require('./build/Release/native.node');
 
+var previewServiceName = "com.p1stream.P1stream.preview";
+
 module.exports = function(scope) {
     // Set config defaults for `root:p1-mac-sources` before init.
     scope.$on('preInit', function() {
@@ -25,6 +27,7 @@ module.exports = function(scope) {
                     case native.EV_DISPLAYS_CHANGED:
                         obj.displays = arg;
                         obj.$mark();
+                        obj.$log.info("Updated displays, %d active", arg.length);
                         break;
 
                     default:
@@ -33,6 +36,45 @@ module.exports = function(scope) {
                 }
             }
         });
+
+        // Handle preview connections.
+        obj.$log.info("Registering preview service '%s'", previewServiceName);
+        native.startPreviewService({
+            name: previewServiceName,
+            onEvent: function(id, arg) {
+                switch (id) {
+                    case native.EV_PREVIEW_REQUEST:
+                        connectHook(arg);
+                        break;
+
+                    default:
+                        scope.handleNativeEvent(obj, id, arg);
+                        break;
+                }
+            }
+        });
+        function connectHook(hook) {
+            var id = hook.mixerId;
+
+            var obj = id && id[0] !== '$' && scope.o[id];
+            if (!obj || obj.cfg.type !== 'mixer') {
+                obj.$log.info("Preview request for invalid mixer '%s'", id);
+                return hook.destroy();
+            }
+
+            obj.$log.info("Adding preview hook for mixer '%s'", id);
+
+            hook.onClose = destroy;
+            var cancel = obj.$addFrameListener({
+                hook: hook,
+                $destroy: destroy
+            });
+
+            function destroy() {
+                cancel();
+                hook.destroy();
+            }
+        }
     });
 
     // Implement audio queue source type.
@@ -94,38 +136,4 @@ module.exports = function(scope) {
             }
         });
     });
-
-    // Handle preview connections.
-    native.startPreviewService({
-        name: "com.p1stream.P1stream.preview",
-        onEvent: function(id, arg) {
-            switch (id) {
-                case native.EV_PREVIEW_REQUEST:
-                    connectHook(arg);
-                    break;
-
-                default:
-                    scope.handleNativeEvent(obj, id, arg);
-                    break;
-            }
-        }
-    });
-    function connectHook(hook) {
-        var id = hook.mixerId;
-
-        var obj = id && id[0] !== '$' && scope.o[id];
-        if (!obj || obj.cfg.type !== 'mixer')
-            return hook.destroy();
-
-        hook.onClose = destroy;
-        var cancel = obj.$addFrameListener({
-            hook: hook,
-            $destroy: destroy
-        });
-
-        function destroy() {
-            cancel();
-            hook.destroy();
-        }
-    }
 };
