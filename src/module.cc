@@ -1,6 +1,6 @@
-#include "mac_sources_priv.h"
+#include "mac_plugins_priv.h"
 
-namespace p1_mac_sources {
+namespace p1_mac_plugins {
 
 
 Eternal<String> on_event_sym;
@@ -100,6 +100,6 @@ static void init(Handle<Object> exports, Handle<Value> module,
 }
 
 
-} // namespace p1_mac_sources;
+} // namespace p1_mac_plugins;
 
-NODE_MODULE_CONTEXT_AWARE(native, p1_mac_sources::init)
+NODE_MODULE_CONTEXT_AWARE(native, p1_mac_plugins::init)

@@ -4,19 +4,19 @@ var native = require('./build/Release/native.node');
 var previewServiceName = "com.p1stream.P1stream.preview";
 
 module.exports = function(scope) {
-    // Set config defaults for `root:p1-mac-sources` before init.
+    // Set config defaults for `root:p1-mac-plugins` before init.
     scope.$on('preInit', function() {
-        var settings = scope.cfg['root:p1-mac-sources'] ||
-            (scope.cfg['root:p1-mac-sources'] = {});
+        var settings = scope.cfg['root:p1-mac-plugins'] ||
+            (scope.cfg['root:p1-mac-plugins'] = {});
         _.defaults(settings, {
-            type: 'root:p1-mac-sources',
+            type: 'root:p1-mac-plugins',
             audioQueueIds: [],
             displayStreamIds: []
         });
     });
 
     // Define the plugin root type.
-    scope.o.$onCreate('root:p1-mac-sources', function(obj) {
+    scope.o.$onCreate('root:p1-mac-plugins', function(obj) {
         obj.$resolveAll('audioQueues');
         obj.$resolveAll('displayStreams');
 
@@ -78,7 +78,7 @@ module.exports = function(scope) {
     });
 
     // Implement audio queue source type.
-    scope.o.$onCreate('source:audio:p1-mac-sources:audio-queue', function(obj) {
+    scope.o.$onCreate('source:audio:p1-mac-plugins:audio-queue', function(obj) {
         obj.$activation({
             start: function() {
                 var inst;
@@ -130,13 +130,13 @@ module.exports = function(scope) {
     });
 
     // Implement display stream source type.
-    scope.o.$onCreate('source:video:p1-mac-sources:display-stream', function(obj) {
+    scope.o.$onCreate('source:video:p1-mac-plugins:display-stream', function(obj) {
         obj.$activation({
             cond: function() {
                 // In addition to the default condition, ensure the display is
                 // detected before we activate the stream.
                 return obj.$defaultCond() &&
-                    _.findWhere(scope.o['root:p1-mac-sources'].displays, {
+                    _.findWhere(scope.o['root:p1-mac-plugins'].displays, {
                         displayId: obj.cfg.displayId
                     });
             },

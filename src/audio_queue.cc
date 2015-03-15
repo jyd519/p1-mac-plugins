@@ -1,6 +1,6 @@
-#include "mac_sources_priv.h"
+#include "mac_plugins_priv.h"
 
-namespace p1_mac_sources {
+namespace p1_mac_plugins {
 
 
 static const UInt32 num_channels = 2;
@@ -231,4 +231,4 @@ void audio_queue::init_prototype(Handle<FunctionTemplate> func)
 }
 
 
-}  // namespace p1_mac_sources
+}  // namespace p1_mac_plugins

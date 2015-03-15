@@ -1,12 +1,12 @@
 {
-    "name": "p1-mac-sources",
+    "name": "p1-mac-plugins",
     "version": "0.0.0",
-    "description": "P1stream sources plugin for Mac OS X",
+    "description": "P1stream Mac plugins",
     "private": true,
     "author": "Stéphan Kochen <stephan@kochen.nl>",
     "repository": {
         "type": "git",
-        "url": "http://github.com/p1stream/p1-mac-sources.git"
+        "url": "http://github.com/p1stream/p1-mac-plugins.git"
     },
     "main": "index.js",
     "dependencies": {

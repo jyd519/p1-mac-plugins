@@ -1,5 +1,5 @@
-#ifndef p1_mac_sources_priv_h
-#define p1_mac_sources_priv_h
+#ifndef p1_mac_plugins_priv_h
+#define p1_mac_plugins_priv_h
 
 #include "p1stream.h"
 #include "p1stream_mac_preview.h"
@@ -8,7 +8,7 @@
 #include <CoreVideo/CoreVideo.h>
 #include <AudioToolbox/AudioToolbox.h>
 
-namespace p1_mac_sources {
+namespace p1_mac_plugins {
 
 #define EV_DISPLAYS_CHANGED 'disp'
 #define EV_PREVIEW_REQUEST  'view'
@@ -201,6 +201,6 @@ public:
 };
 
 
-}  // namespace p1_mac_sources
+}  // namespace p1_mac_plugins
 
-#endif  // p1_mac_sources_priv_h
+#endif  // p1_mac_plugins_priv_h

@@ -1,6 +1,6 @@
-#include "mac_sources_priv.h"
+#include "mac_plugins_priv.h"
 
-namespace p1_mac_sources {
+namespace p1_mac_plugins {
 
 struct display_info {
     CGDirectDisplayID id;
@@ -168,4 +168,4 @@ void detect_displays::init_prototype(Handle<FunctionTemplate> func)
 }
 
 
-}  // namespace p1_mac_sources
+}  // namespace p1_mac_plugins

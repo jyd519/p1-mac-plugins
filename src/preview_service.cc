@@ -1,8 +1,8 @@
-#include "mac_sources_priv.h"
+#include "mac_plugins_priv.h"
 
 #include <bootstrap.h>
 
-namespace p1_mac_sources {
+namespace p1_mac_plugins {
 
 struct request_msg_rcv_t {
     mach_msg_header_t header;

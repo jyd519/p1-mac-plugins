@@ -1,6 +1,6 @@
-## P1stream build environment
+## P1stream Mac plugins
 
-This repository contains the Mac OS X source plugins for [P1stream].
+This repository contains [P1stream] plugins for Mac OS X.
 
 It contains three plugins:
 

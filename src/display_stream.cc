@@ -1,6 +1,6 @@
-#include "mac_sources_priv.h"
+#include "mac_plugins_priv.h"
 
-namespace p1_mac_sources {
+namespace p1_mac_plugins {
 
 static void display_stream_callback(
     display_stream &stream,
@@ -158,4 +158,4 @@ void display_stream::init_prototype(Handle<FunctionTemplate> func)
 }
 
 
-}  // namespace p1_mac_sources
+}  // namespace p1_mac_plugins
