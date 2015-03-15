@@ -203,7 +203,7 @@ static void input_callback(
         ctx->render_buffer(time, in, samples);
 
     OSStatus ret = AudioQueueEnqueueBuffer(inAQ, inBuffer, 0, NULL);
-    if (ret != noErr)
+    if (ret != noErr && ret != kAudioQueueErr_EnqueueDuringReset)
         inst.buffer.emitf(EV_LOG_ERROR, "AudioQueueEnqueueBuffer error 0x%x\n", ret);
 }
 
