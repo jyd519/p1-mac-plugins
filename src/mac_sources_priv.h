@@ -12,6 +12,7 @@ namespace p1_mac_sources {
 
 #define EV_DISPLAYS_CHANGED 'disp'
 #define EV_PREVIEW_REQUEST  'view'
+#define EV_AQ_IS_RUNNING    'qrun'
 
 using namespace v8;
 using namespace node;
@@ -130,6 +131,7 @@ public:
 
     // Public JavaScript methods.
     void init(const FunctionCallbackInfo<Value>& args);
+    void stop();
     void destroy();
 
     // Lockable implementation.

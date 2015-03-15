@@ -48,6 +48,7 @@ static void init(Handle<Object> exports, Handle<Value> module,
 
     NODE_DEFINE_CONSTANT(exports, EV_DISPLAYS_CHANGED);
     NODE_DEFINE_CONSTANT(exports, EV_PREVIEW_REQUEST);
+    NODE_DEFINE_CONSTANT(exports, EV_AQ_IS_RUNNING);
 
 #define SYM(handle, value) handle.Set(isolate, String::NewFromUtf8(isolate, value))
     SYM(on_event_sym, "onEvent");

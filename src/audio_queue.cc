@@ -8,6 +8,10 @@ static const UInt32 sample_size = sizeof(float);
 static const UInt32 sample_size_bits = sample_size * 8;
 static const UInt32 sample_rate = 44100;
 
+static void property_callback(
+    void *inUserData,
+    AudioQueueRef inAQ,
+    AudioQueuePropertyID inID);
 static void input_callback(
     void *inUserData,
     AudioQueueRef inAQ,
@@ -15,11 +19,13 @@ static void input_callback(
     const AudioTimeStamp *inStartTime,
     UInt32 inNumberPacketDescriptions,
     const AudioStreamPacketDescription *inPacketDescs);
+static Local<Value> events_transform(
+    Isolate *isolate, event &ev, buffer_slicer &slicer);
 
 
 
 audio_queue::audio_queue() :
-    buffer(this)
+    buffer(this, events_transform)
 {
 }
 
@@ -64,6 +70,10 @@ void audio_queue::init(const FunctionCallbackInfo<Value>& args)
     os_ret = AudioQueueNewInput(&fmt, input_callback, this, NULL, kCFRunLoopCommonModes, 0, &queue);
     if (!(ok = (os_ret == noErr)))
         buffer.emitf(EV_LOG_ERROR, "AudioQueueNewInput error 0x%x", os_ret);
+
+    os_ret = AudioQueueAddPropertyListener(queue, kAudioQueueProperty_IsRunning, property_callback, this);
+    if (!(ok = (os_ret == noErr)))
+        buffer.emitf(EV_LOG_ERROR, "AudioQueueAddPropertyListener error 0x%x", os_ret);
 
     if (ok) {
         val = params->Get(device_sym.Get(isolate));
@@ -110,10 +120,19 @@ void audio_queue::init(const FunctionCallbackInfo<Value>& args)
     }
 }
 
+void audio_queue::stop()
+{
+    if (queue != NULL) {
+        auto ret = AudioQueueStop(queue, FALSE);
+        if (ret != noErr)
+            buffer.emitf(EV_LOG_ERROR, "AudioQueueSTOP error 0x%x\n", ret);
+    }
+}
+
 void audio_queue::destroy()
 {
     if (queue != NULL) {
-        OSStatus ret = AudioQueueDispose(queue, FALSE);
+        auto ret = AudioQueueDispose(queue, TRUE);
         queue = NULL;
         if (ret != noErr)
             buffer.emitf(EV_LOG_ERROR, "AudioQueueDispose error 0x%x\n", ret);
@@ -139,7 +158,33 @@ void audio_queue::unlink_audio_source(audio_source_context &ctx)
     ctxes.remove(&ctx);
 }
 
-void input_callback(
+static void property_callback(
+    void *inUserData,
+    AudioQueueRef inAQ,
+    AudioQueuePropertyID inID)
+{
+    auto &inst = *(audio_queue *) inUserData;
+
+    lock_handle lock(inst);
+
+    // Sanity check, unlikely false.
+    if (inAQ != inst.queue || inID != kAudioQueueProperty_IsRunning)
+        return;
+
+    UInt32 is_running;
+    UInt32 size = sizeof(is_running);
+    auto ret = AudioQueueGetProperty(inAQ, kAudioQueueProperty_IsRunning, &is_running, &size);
+    if (ret != noErr) {
+        inst.buffer.emitf(EV_LOG_ERROR, "AudioQueueGetProperty error 0x%x\n", ret);
+        return;
+    }
+
+    auto *ev = inst.buffer.emit(EV_AQ_IS_RUNNING, sizeof(is_running));
+    if (ev != nullptr)
+        *(UInt32 *) ev->data = is_running;
+}
+
+static void input_callback(
     void *inUserData,
     AudioQueueRef inAQ,
     AudioQueueBufferRef inBuffer,
@@ -162,8 +207,23 @@ void input_callback(
         inst.buffer.emitf(EV_LOG_ERROR, "AudioQueueEnqueueBuffer error 0x%x\n", ret);
 }
 
+static Local<Value> events_transform(
+    Isolate *isolate, event &ev, buffer_slicer &slicer)
+{
+    switch (ev.id) {
+        case EV_AQ_IS_RUNNING:
+            return Uint32::NewFromUnsigned(isolate, *(UInt32 *) ev.data);
+        default:
+            return Undefined(isolate);
+    }
+}
+
 void audio_queue::init_prototype(Handle<FunctionTemplate> func)
 {
+    NODE_SET_PROTOTYPE_METHOD(func, "stop", [](const FunctionCallbackInfo<Value>& args) {
+        auto link = ObjectWrap::Unwrap<audio_queue>(args.This());
+        link->stop();
+    });
     NODE_SET_PROTOTYPE_METHOD(func, "destroy", [](const FunctionCallbackInfo<Value>& args) {
         auto link = ObjectWrap::Unwrap<audio_queue>(args.This());
         link->destroy();

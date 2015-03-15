@@ -81,22 +81,47 @@ module.exports = function(scope) {
     scope.o.$onCreate('source:audio:p1-mac-sources:audio-queue', function(obj) {
         obj.$activation({
             start: function() {
+                var inst;
+
                 try {
-                    obj.$instance = new native.AudioQueue({
+                    inst = new native.AudioQueue({
                         device: obj.cfg.device,
-                        onEvent: function(id, arg) {
-                            scope.handleNativeEvent(obj, id, arg);
-                        }
+                        onEvent: onEvent
                     });
                 }
                 catch (err) {
                     return obj.$fatal(err, "Failed to instantiate AudioQueue");
                 }
+
+                obj.$instance = inst;
                 obj.$mark();
+
+                function onEvent(id, arg) {
+                    switch (id) {
+                        case native.EV_AQ_IS_RUNNING:
+                            if (arg) {
+                                obj.$log.info('Capture started');
+                            }
+                            else {
+                                if (obj.$instance === inst) {
+                                    obj.$fatal('Capture unexpectedly stopped');
+                                    obj.$instance = null;
+                                }
+                                else {
+                                    obj.$log.info('Capture stopped');
+                                }
+                                inst.destroy();
+                            }
+                            break;
+                        default:
+                            scope.handleNativeEvent(obj, id, arg);
+                            break;
+                    }
+                }
             },
             stop: function() {
                 if (obj.$instance) {
-                    obj.$instance.destroy();
+                    obj.$instance.stop();
                     obj.$instance = null;
                 }
                 obj.$mark();
