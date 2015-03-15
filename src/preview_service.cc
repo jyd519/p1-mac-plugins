@@ -22,7 +22,6 @@ struct preview_request {
 static Local<Value> events_transform(
     Isolate *isolate, event &ev, buffer_slicer &slicer);
 static Local<Value> create_hook(Isolate *isolate, preview_request &req);
-static void emit_client_error(uv_async_t *handle);
 
 static preview_service *singleton = nullptr;
 
@@ -192,6 +191,11 @@ static Local<Value> create_hook(Isolate *isolate, preview_request &req)
 }
 
 
+preview_client::preview_client() :
+    error_async(std::bind(&preview_client::emit_client_error, this))
+{
+}
+
 void preview_client::init(Isolate *isolate_, Handle<Object> obj, mach_port_t client_port_)
 {
     isolate = isolate_;
@@ -200,9 +204,6 @@ void preview_client::init(Isolate *isolate_, Handle<Object> obj, mach_port_t cli
     Wrap(obj);
 
     client_port = client_port_;
-
-    if (uv_async_init(uv_default_loop(), &async, emit_client_error))
-        abort();
 
     Ref();
 }
@@ -216,15 +217,13 @@ void preview_client::destroy()
     Unref();
 }
 
-static void emit_client_error(uv_async_t *handle)
+void preview_client::emit_client_error()
 {
-    auto &client = *(preview_client *) handle;
-    auto *isolate = client.isolate;
-
     HandleScope handle_scope(isolate);
-    Context::Scope context_scope(Local<Context>::New(isolate, client.context));
-
-    MakeCallback(isolate, client.handle(), "onClose", 0, NULL);
+    if (!context.IsEmpty()) {
+        Context::Scope context_scope(Local<Context>::New(isolate, context));
+        MakeCallback(isolate, handle(), "onClose", 0, NULL);
+    }
 }
 
 void preview_client::send_set_surface_msg(mach_port_t surface_port)
@@ -257,8 +256,7 @@ void preview_client::send_msg(mach_msg_header_t *msgh)
         // FIXME: log using service buffer
         fprintf(stderr, "mach_msg error 0x%x on client port\n", mret);
         close_port();
-        if (uv_async_send(&async))
-            abort();
+        error_async.signal();
     }
 }
 
