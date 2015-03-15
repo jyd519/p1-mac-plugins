@@ -172,13 +172,14 @@ public:
 
 class preview_client : public video_hook {
 public:
-    preview_client();
+    preview_client(preview_service &service_);
 
     async error_async;
 
     Isolate *isolate;
     Persistent<Context> context;
 
+    preview_service &service;
     mach_port_t client_port;
 
     void send_set_surface_msg(mach_port_t surface_port);

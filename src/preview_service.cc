@@ -17,6 +17,7 @@ typedef mach_msg_empty_send_t updated_msg_send_t;
 struct preview_request {
     char mixer_id[128];
     mach_port_t client_port;
+    preview_service *service;
 };
 
 static Local<Value> events_transform(
@@ -127,6 +128,7 @@ void preview_service::thread_loop()
                 auto &req = *(preview_request *) ev->data;
                 strcpy(req.mixer_id, msg.mixer_id);
                 req.client_port = msg.header.msgh_remote_port;
+                req.service = this;
             }
         }
 
@@ -149,16 +151,16 @@ mach_port_t preview_service::get_service_port()
 
     kret = task_get_bootstrap_port(mach_task_self(), &bootstrap_port);
     if (kret != KERN_SUCCESS) {
-        buffer.emitf(EV_LOG_ERROR, "task_get_bootstrap_port error 0x%x\n", kret);
+        buffer.emitf(EV_LOG_ERROR, "task_get_bootstrap_port error 0x%x", kret);
     }
     else {
         kret = bootstrap_check_in(bootstrap_port, name, &service_port);
         if (kret != KERN_SUCCESS)
-            buffer.emitf(EV_LOG_ERROR, "bootstrap_check_in error 0x%x\n", kret);
+            buffer.emitf(EV_LOG_ERROR, "bootstrap_check_in error 0x%x", kret);
 
         kret = mach_port_deallocate(mach_task_self(), bootstrap_port);
         if (kret != KERN_SUCCESS)
-            buffer.emitf(EV_LOG_ERROR, "mach_port_deallocate error 0x%x on bootstrap port\n", kret);
+            buffer.emitf(EV_LOG_ERROR, "mach_port_deallocate error 0x%x on bootstrap port", kret);
     }
 
     return service_port;
@@ -184,15 +186,16 @@ static Local<Value> create_hook(Isolate *isolate, preview_request &req)
     obj->Set(mixer_id_sym.Get(isolate), String::NewFromUtf8(isolate, req.mixer_id));
 
     // Create the hook wrap.
-    auto client = new preview_client();
+    auto client = new preview_client(*req.service);
     client->init(isolate, obj, req.client_port);
 
     return obj;
 }
 
 
-preview_client::preview_client() :
-    error_async(std::bind(&preview_client::emit_client_error, this))
+preview_client::preview_client(preview_service &service_) :
+    error_async(std::bind(&preview_client::emit_client_error, this)),
+    service(service_)
 {
 }
 
@@ -253,8 +256,12 @@ void preview_client::send_msg(mach_msg_header_t *msgh)
         msgh->msgh_size, 0, MACH_PORT_NULL, 0, MACH_PORT_NULL
     );
     if (mret != MACH_MSG_SUCCESS && mret != MACH_SEND_TIMED_OUT) {
-        // FIXME: log using service buffer
-        fprintf(stderr, "mach_msg error 0x%x on client port\n", mret);
+        lock_handle lock(service);
+        if (mret == MACH_SEND_INVALID_DEST)
+            service.buffer.emitf(EV_LOG_INFO, "Preview client went away");
+        else
+            service.buffer.emitf(EV_LOG_WARN, "mach_msg error 0x%x on client port", mret);
+
         close_port();
         error_async.signal();
     }
@@ -267,8 +274,10 @@ void preview_client::close_port()
 
     kern_return_t kret = mach_port_deallocate(mach_task_self(), client_port);
     client_port = MACH_PORT_NULL;
-    if (kret != KERN_SUCCESS)
-        fprintf(stderr, "mach_port_deallocate error 0x%x on client port\n", kret);
+    if (kret != KERN_SUCCESS) {
+        lock_handle lock(service);
+        service.buffer.emitf(EV_LOG_ERROR, "mach_port_deallocate error 0x%x on client port", kret);
+    }
 }
 
 void preview_client::link_video_hook(video_hook_context &ctx)
@@ -277,8 +286,10 @@ void preview_client::link_video_hook(video_hook_context &ctx)
     send_set_surface_msg(port);
 
     kern_return_t kret = mach_port_deallocate(mach_task_self(), port);
-    if (kret != KERN_SUCCESS)
-        fprintf(stderr, "mach_port_deallocate error 0x%x on surface port\n", kret);
+    if (kret != KERN_SUCCESS) {
+        lock_handle lock(service);
+        service.buffer.emitf(EV_LOG_ERROR, "mach_port_deallocate error 0x%x on surface port", kret);
+    }
 }
 
 void preview_client::unlink_video_hook(video_hook_context &ctx)
