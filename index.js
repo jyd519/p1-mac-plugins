@@ -90,14 +90,15 @@ module.exports = function(scope) {
                     });
                 }
                 catch (err) {
-                    obj.$log.error(err, "Failed to instantiate AudioQueue");
-                    obj.hasError = true;
+                    return obj.$fatal(err, "Failed to instantiate AudioQueue");
                 }
                 obj.$mark();
             },
             stop: function() {
-                obj.$instance.destroy();
-                obj.$instance = null;
+                if (obj.$instance) {
+                    obj.$instance.destroy();
+                    obj.$instance = null;
+                }
                 obj.$mark();
             }
         });
@@ -124,14 +125,15 @@ module.exports = function(scope) {
                     });
                 }
                 catch (err) {
-                    obj.$log.error(err, "Failed to instantiate DisplayStream");
-                    obj.hasError = true;
+                    return obj.$fatal(err, "Failed to instantiate DisplayStream");
                 }
                 obj.$mark();
             },
             stop: function() {
-                obj.$instance.destroy();
-                obj.$instance = null;
+                if (obj.$instance) {
+                    obj.$instance.destroy();
+                    obj.$instance = null;
+                }
                 obj.$mark();
             }
         });
