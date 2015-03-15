@@ -56,8 +56,8 @@ module.exports = function(scope) {
         function connectHook(hook) {
             var id = hook.mixerId;
 
-            var obj = id && id[0] !== '$' && scope.o[id];
-            if (!obj || obj.cfg.type !== 'mixer') {
+            var mixer = id && id[0] !== '$' && scope.o[id];
+            if (!mixer || mixer.cfg.type !== 'mixer') {
                 obj.$log.info("Preview request for invalid mixer '%s'", id);
                 return hook.destroy();
             }
@@ -65,7 +65,7 @@ module.exports = function(scope) {
             obj.$log.info("Adding preview hook for mixer '%s'", id);
 
             hook.onClose = destroy;
-            var cancel = obj.$addFrameListener({
+            var cancel = mixer.$addFrameListener({
                 hook: hook,
                 $destroy: destroy
             });
