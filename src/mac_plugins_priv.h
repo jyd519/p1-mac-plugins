@@ -11,8 +11,9 @@
 namespace p1_mac_plugins {
 
 #define EV_DISPLAYS_CHANGED 'disp'
-#define EV_PREVIEW_REQUEST  'view'
-#define EV_AQ_IS_RUNNING    'qrun'
+#define EV_AUDIO_INPUTS_CHANGED 'ainp'
+#define EV_PREVIEW_REQUEST 'view'
+#define EV_AQ_IS_RUNNING 'qrun'
 
 using namespace v8;
 using namespace node;
@@ -25,6 +26,7 @@ extern Eternal<String> divisor_sym;
 extern Eternal<String> device_sym;
 extern Eternal<String> width_sym;
 extern Eternal<String> height_sym;
+extern Eternal<String> uid_sym;
 extern Eternal<String> name_sym;
 extern Eternal<String> mixer_id_sym;
 
@@ -140,6 +142,30 @@ public:
     // Audio source implementation.
     virtual void link_audio_source(audio_source_context &ctx) final;
     virtual void unlink_audio_source(audio_source_context &ctx) final;
+
+    // Module init.
+    static void init_prototype(Handle<FunctionTemplate> func);
+};
+
+
+class detect_audio_inputs : public ObjectWrap, public lockable {
+public:
+    detect_audio_inputs();
+
+    lockable_mutex mutex;
+    event_buffer buffer;
+
+    bool running;
+
+    // Internal.
+    void emit_change();
+
+    // Public JavaScript methods.
+    void init(const FunctionCallbackInfo<Value>& args);
+    void destroy();
+
+    // Lockable implementation.
+    virtual lockable *lock() final;
 
     // Module init.
     static void init_prototype(Handle<FunctionTemplate> func);

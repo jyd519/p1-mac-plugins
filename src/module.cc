@@ -9,6 +9,7 @@ Eternal<String> divisor_sym;
 Eternal<String> device_sym;
 Eternal<String> width_sym;
 Eternal<String> height_sym;
+Eternal<String> uid_sym;
 Eternal<String> name_sym;
 Eternal<String> mixer_id_sym;
 
@@ -39,6 +40,12 @@ static void audio_queue_constructor(const FunctionCallbackInfo<Value>& args)
     queue->init(args);
 }
 
+static void detect_audio_inputs_constructor(const FunctionCallbackInfo<Value>& args)
+{
+    auto detect = new detect_audio_inputs();
+    detect->init(args);
+}
+
 static void init(Handle<Object> exports, Handle<Value> module,
     Handle<Context> context, void* priv)
 {
@@ -47,6 +54,7 @@ static void init(Handle<Object> exports, Handle<Value> module,
     Handle<FunctionTemplate> func;
 
     NODE_DEFINE_CONSTANT(exports, EV_DISPLAYS_CHANGED);
+    NODE_DEFINE_CONSTANT(exports, EV_AUDIO_INPUTS_CHANGED);
     NODE_DEFINE_CONSTANT(exports, EV_PREVIEW_REQUEST);
     NODE_DEFINE_CONSTANT(exports, EV_AQ_IS_RUNNING);
 
@@ -57,6 +65,7 @@ static void init(Handle<Object> exports, Handle<Value> module,
     SYM(device_sym, "device");
     SYM(width_sym, "width");
     SYM(height_sym, "height");
+    SYM(uid_sym, "uid");
     SYM(name_sym, "name");
     SYM(mixer_id_sym, "mixerId");
 #undef SYM
@@ -87,6 +96,13 @@ static void init(Handle<Object> exports, Handle<Value> module,
     func->InstanceTemplate()->SetInternalFieldCount(1);
     func->SetClassName(name);
     audio_queue::init_prototype(func);
+    exports->Set(name, func->GetFunction());
+
+    name = String::NewFromUtf8(isolate, "DetectAudioInputs");
+    func = FunctionTemplate::New(isolate, detect_audio_inputs_constructor);
+    func->InstanceTemplate()->SetInternalFieldCount(1);
+    func->SetClassName(name);
+    detect_audio_inputs::init_prototype(func);
     exports->Set(name, func->GetFunction());
 
     name = String::NewFromUtf8(isolate, "startPreviewService");

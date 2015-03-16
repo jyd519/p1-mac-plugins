@@ -37,6 +37,23 @@ module.exports = function(scope) {
             }
         });
 
+        // Set detected audio inputs on the root.
+        obj.$monitor = new native.DetectAudioInputs({
+            onEvent: function(id, arg) {
+                switch (id) {
+                    case native.EV_AUDIO_INPUTS_CHANGED:
+                        obj.audioInputs = arg;
+                        obj.$mark();
+                        obj.$log.info("Updated audio inputs, %d active", arg.length);
+                        break;
+
+                    default:
+                        scope.handleNativeEvent(obj, id, arg);
+                        break;
+                }
+            }
+        });
+
         // Handle preview connections.
         obj.$log.info("Registering preview service '%s'", previewServiceName);
         native.startPreviewService({
@@ -80,6 +97,14 @@ module.exports = function(scope) {
     // Implement audio queue source type.
     scope.o.$onCreate('source:audio:p1-mac-plugins:audio-queue', function(obj) {
         obj.$activation({
+            cond: function() {
+                // In addition to the default condition, ensure the input is
+                // detected before we activate the source.
+                return obj.$defaultCond() &&
+                    _.findWhere(scope.o['root:p1-mac-plugins'].audioInputs, {
+                        uid: obj.cfg.device
+                    });
+            },
             start: function() {
                 var inst;
 
