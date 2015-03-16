@@ -163,4 +163,39 @@ module.exports = function(scope) {
             }
         });
     });
+
+    // Implement display clock type.
+    scope.o.$onCreate('clock:p1-mac-plugins:display-link', function(obj) {
+        obj.$activation({
+            cond: function() {
+                // In addition to the default condition, ensure the display is
+                // detected before we activate the clock.
+                return obj.$defaultCond() &&
+                    _.findWhere(scope.o['root:p1-mac-plugins'].displays, {
+                        displayId: obj.cfg.displayId
+                    });
+            },
+            start: function() {
+                try {
+                    obj.$instance = new native.DisplayLink({
+                        displayId: obj.cfg.displayId,
+                        onEvent: function(id, arg) {
+                            scope.handleNativeEvent(obj, id, arg);
+                        }
+                    });
+                }
+                catch (err) {
+                    return obj.$fatal(err, "Failed to instantiate DisplayLink");
+                }
+                obj.$mark();
+            },
+            stop: function() {
+                if (obj.$instance) {
+                    obj.$instance.destroy();
+                    obj.$instance = null;
+                }
+                obj.$mark();
+            }
+        });
+    });
 };
