@@ -23,10 +23,9 @@ using namespace p1stream;
 extern Eternal<String> on_event_sym;
 extern Eternal<String> display_id_sym;
 extern Eternal<String> divisor_sym;
-extern Eternal<String> device_sym;
+extern Eternal<String> device_id_sym;
 extern Eternal<String> width_sym;
 extern Eternal<String> height_sym;
-extern Eternal<String> uid_sym;
 extern Eternal<String> name_sym;
 extern Eternal<String> mixer_id_sym;
 

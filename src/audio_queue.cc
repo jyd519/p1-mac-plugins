@@ -76,7 +76,7 @@ void audio_queue::init(const FunctionCallbackInfo<Value>& args)
         buffer.emitf(EV_LOG_ERROR, "AudioQueueAddPropertyListener error 0x%x", os_ret);
 
     if (ok) {
-        val = params->Get(device_sym.Get(isolate));
+        val = params->Get(device_id_sym.Get(isolate));
         if (!val->IsUndefined()) {
             String::Utf8Value strVal(val);
             if (!(ok = (*strVal != NULL))) {

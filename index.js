@@ -102,7 +102,7 @@ module.exports = function(scope) {
                 // detected before we activate the source.
                 return obj.$defaultCond() &&
                     _.findWhere(scope.o['root:p1-mac-plugins'].audioInputs, {
-                        uid: obj.cfg.device
+                        deviceId: obj.cfg.deviceId
                     });
             },
             start: function() {
@@ -110,7 +110,7 @@ module.exports = function(scope) {
 
                 try {
                     inst = new native.AudioQueue({
-                        device: obj.cfg.device,
+                        deviceId: obj.cfg.deviceId,
                         onEvent: onEvent
                     });
                 }

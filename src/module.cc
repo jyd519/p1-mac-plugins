@@ -6,10 +6,9 @@ namespace p1_mac_plugins {
 Eternal<String> on_event_sym;
 Eternal<String> display_id_sym;
 Eternal<String> divisor_sym;
-Eternal<String> device_sym;
+Eternal<String> device_id_sym;
 Eternal<String> width_sym;
 Eternal<String> height_sym;
-Eternal<String> uid_sym;
 Eternal<String> name_sym;
 Eternal<String> mixer_id_sym;
 
@@ -62,10 +61,9 @@ static void init(Handle<Object> exports, Handle<Value> module,
     SYM(on_event_sym, "onEvent");
     SYM(display_id_sym, "displayId");
     SYM(divisor_sym, "divisor");
-    SYM(device_sym, "device");
+    SYM(device_id_sym, "deviceId");
     SYM(width_sym, "width");
     SYM(height_sym, "height");
-    SYM(uid_sym, "uid");
     SYM(name_sym, "name");
     SYM(mixer_id_sym, "mixerId");
 #undef SYM

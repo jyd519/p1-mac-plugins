@@ -225,7 +225,7 @@ static Local<Value> audio_input_infos_to_js(
             actual_count--;
     }
 
-    auto l_uid_sym = uid_sym.Get(isolate);
+    auto l_device_id_sym = device_id_sym.Get(isolate);
     auto l_name_sym = name_sym.Get(isolate);
 
     auto arr = Array::New(isolate, actual_count);
@@ -236,7 +236,7 @@ static Local<Value> audio_input_infos_to_js(
             continue;
 
         auto obj = Object::New(isolate);
-        obj->Set(l_uid_sym, v8_string_from_cf_string(isolate, info.uid));
+        obj->Set(l_device_id_sym, v8_string_from_cf_string(isolate, info.uid));
         obj->Set(l_name_sym, v8_string_from_cf_string(isolate, info.name));
         arr->Set(arr_idx++, obj);
 
