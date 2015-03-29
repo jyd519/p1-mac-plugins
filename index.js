@@ -202,21 +202,43 @@ module.exports = function(app) {
                     });
             },
             start: function() {
+                var inst;
+
                 try {
-                    obj.$instance = new native.DisplayLink({
+                    inst = new native.DisplayLink({
                         displayId: obj.cfg.displayId,
-                        onEvent: function(id, arg) {
-                            obj.handleNativeEvent(id, arg);
-                        }
+                        onEvent: onEvent
                     });
                 }
                 catch (err) {
                     return obj.fatal(err, "Failed to instantiate DisplayLink");
                 }
+
+                obj._instance = inst;
+                app.mark();
+
+                function onEvent(id, arg) {
+                    switch (id) {
+                        case native.EV_DISPLAY_LINK_STOPPED:
+                            if (obj._instance === inst) {
+                                obj.fatal('Link unexpectedly stopped');
+                                obj._instance = null;
+                                app.mark();
+                            }
+                            else {
+                                obj._log.info('Link stopped');
+                            }
+                            inst.destroy();
+                            break;
+                        default:
+                            obj.handleNativeEvent(obj, id, arg);
+                            break;
+                    }
+                }
             },
             stop: function() {
                 if (obj._instance) {
-                    obj._instance.destroy();
+                    obj._instance.stop();
                     obj._instance = null;
                 }
                 app.mark();

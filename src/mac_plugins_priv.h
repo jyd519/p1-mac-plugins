@@ -14,6 +14,7 @@ namespace p1_mac_plugins {
 #define EV_AUDIO_INPUTS_CHANGED 'ainp'
 #define EV_PREVIEW_REQUEST 'view'
 #define EV_AQ_IS_RUNNING 'qrun'
+#define EV_DISPLAY_LINK_STOPPED 'dstp'
 
 using namespace v8;
 using namespace node;
@@ -49,6 +50,7 @@ public:
 
     // Public JavaScript methods.
     void init(const FunctionCallbackInfo<Value>& args);
+    void stop();
     void destroy();
 
     // Lockable implementation.

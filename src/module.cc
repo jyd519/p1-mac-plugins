@@ -56,6 +56,7 @@ static void init(Handle<Object> exports, Handle<Value> module,
     NODE_DEFINE_CONSTANT(exports, EV_AUDIO_INPUTS_CHANGED);
     NODE_DEFINE_CONSTANT(exports, EV_PREVIEW_REQUEST);
     NODE_DEFINE_CONSTANT(exports, EV_AQ_IS_RUNNING);
+    NODE_DEFINE_CONSTANT(exports, EV_DISPLAY_LINK_STOPPED);
 
 #define SYM(handle, value) handle.Set(isolate, String::NewFromUtf8(isolate, value))
     SYM(on_event_sym, "onEvent");

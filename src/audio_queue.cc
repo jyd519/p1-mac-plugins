@@ -125,7 +125,7 @@ void audio_queue::stop()
     if (queue != NULL) {
         auto ret = AudioQueueStop(queue, FALSE);
         if (ret != noErr)
-            buffer.emitf(EV_LOG_ERROR, "AudioQueueSTOP error 0x%x\n", ret);
+            buffer.emitf(EV_LOG_ERROR, "AudioQueueStop error 0x%x\n", ret);
     }
 }
 

@@ -84,25 +84,22 @@ void display_link::init(const FunctionCallbackInfo<Value>& args)
         return;
     }
 
+    running = true;
     cv_ret = CVDisplayLinkStart(cv_handle);
     if (cv_ret != kCVReturnSuccess) {
         buffer.emitf(EV_LOG_ERROR, "CVDisplayLinkStart error 0x%x", cv_ret);
+        running = false;
         return;
     }
+}
 
-    running = true;
+void display_link::stop()
+{
+    running = false;
 }
 
 void display_link::destroy()
 {
-    if (running) {
-        running = false;
-
-        auto cv_ret = CVDisplayLinkStop(cv_handle);
-        if (cv_ret != kCVReturnSuccess)
-            buffer.emitf(EV_LOG_ERROR, "CVDisplayLinkStop error 0x%x\n", cv_ret);
-    }
-
     if (cv_handle != NULL) {
         CFRelease(cv_handle);
         cv_handle = NULL;
@@ -164,9 +161,19 @@ static CVReturn display_link_callback(
     // Call mixer with lock.
     {
         lock_handle lock(link);
-        auto time = now->hostTime;
-        for (auto ctx : link.ctxes)
-            ctx->tick(time);
+
+        if (link.running) {
+            auto time = now->hostTime;
+            for (auto ctx : link.ctxes)
+                ctx->tick(time);
+        }
+        else {
+            auto cv_ret = CVDisplayLinkStop(cv_handle);
+            if (cv_ret == kCVReturnSuccess)
+                link.buffer.emit(EV_DISPLAY_LINK_STOPPED);
+            else
+                link.buffer.emitf(EV_LOG_ERROR, "CVDisplayLinkStop error 0x%x\n", cv_ret);
+        }
     }
 
     return kCVReturnSuccess;
@@ -174,6 +181,11 @@ static CVReturn display_link_callback(
 
 void display_link::init_prototype(Handle<FunctionTemplate> func)
 {
+    NODE_SET_PROTOTYPE_METHOD(func, "stop", [](const FunctionCallbackInfo<Value>& args) {
+        auto link = ObjectWrap::Unwrap<display_link>(args.This());
+        link->stop();
+    });
+
     NODE_SET_PROTOTYPE_METHOD(func, "destroy", [](const FunctionCallbackInfo<Value>& args) {
         auto link = ObjectWrap::Unwrap<display_link>(args.This());
         link->destroy();
