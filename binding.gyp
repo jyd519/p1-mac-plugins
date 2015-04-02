@@ -14,11 +14,13 @@
                 'src/detect_displays.cc',
                 'src/audio_queue.cc',
                 'src/detect_audio_inputs.cc',
+                'src/syphon_directory.mm',
                 'src/preview_service.cc',
-                'src/module.cc'
+                'src/module.mm'
             ],
             'xcode_settings': {
                 # 'MACOSX_DEPLOYMENT_TARGET': '10.8',  # FIXME: This doesn't work
+                'CLANG_ENABLE_OBJC_ARC': 'YES',
                 'OTHER_CFLAGS': ['-mmacosx-version-min=10.8', '-std=c++11', '-stdlib=libc++']
             },
             'link_settings': {

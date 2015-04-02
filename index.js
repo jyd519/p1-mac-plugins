@@ -56,6 +56,24 @@ module.exports = function(app) {
             }
         });
 
+        // Set detected syphon servers on the root.
+        obj._syphonDirectory = new native.SyphonDirectory({
+            onEvent: function(id, arg) {
+                switch (id) {
+                    case native.EV_SYPHON_SERVERS_CHANGED:
+                        obj.syphonServers = arg;
+                        app.mark();
+
+                        obj._log.info("Updated syphon servers, %d active", arg.length);
+                        break;
+
+                    default:
+                        obj.handleNativeEvent(obj, id, arg);
+                        break;
+                }
+            }
+        });
+
         // Handle preview connections.
         obj._log.info("Registering preview service '%s'", previewServiceName);
         native.startPreviewService({

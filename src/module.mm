@@ -4,6 +4,7 @@
 #include "display_link.h"
 #include "display_stream.h"
 #include "preview_service.h"
+#include "syphon_directory.h"
 
 #include <CoreFoundation/CoreFoundation.h>
 
@@ -13,11 +14,13 @@ namespace p1_mac_plugins {
 Eternal<String> on_event_sym;
 Eternal<String> display_id_sym;
 Eternal<String> device_id_sym;
+Eternal<String> server_id_sym;
 Eternal<String> mixer_id_sym;
 Eternal<String> divisor_sym;
 Eternal<String> width_sym;
 Eternal<String> height_sym;
 Eternal<String> name_sym;
+Eternal<String> app_sym;
 
 Persistent<ObjectTemplate> hook_tmpl;
 
@@ -72,6 +75,18 @@ static void detect_audio_inputs_constructor(const FunctionCallbackInfo<Value>& a
     detect->init(args);
 }
 
+static void syphon_directory_constructor(const FunctionCallbackInfo<Value>& args)
+{
+    auto directory = new syphon_directory();
+    directory->init(args);
+}
+
+static void syphon_client_constructor(const FunctionCallbackInfo<Value>& args)
+{
+    auto client = new syphon_client();
+    client->init(args);
+}
+
 static void init(Handle<Object> exports, Handle<Value> module,
     Handle<Context> context, void* priv)
 {
@@ -90,11 +105,13 @@ static void init(Handle<Object> exports, Handle<Value> module,
     SYM(on_event_sym, "onEvent");
     SYM(display_id_sym, "displayId");
     SYM(device_id_sym, "deviceId");
+    SYM(server_id_sym, "serverId");
     SYM(mixer_id_sym, "mixerId");
     SYM(divisor_sym, "divisor");
     SYM(width_sym, "width");
     SYM(height_sym, "height");
     SYM(name_sym, "name");
+    SYM(app_sym, "app");
 #undef SYM
 
     name = String::NewFromUtf8(isolate, "DisplayLink");
@@ -130,6 +147,13 @@ static void init(Handle<Object> exports, Handle<Value> module,
     func->InstanceTemplate()->SetInternalFieldCount(1);
     func->SetClassName(name);
     detect_audio_inputs::init_prototype(func);
+    exports->Set(name, func->GetFunction());
+
+    name = String::NewFromUtf8(isolate, "SyphonDirectory");
+    func = FunctionTemplate::New(isolate, syphon_directory_constructor);
+    func->InstanceTemplate()->SetInternalFieldCount(1);
+    func->SetClassName(name);
+    syphon_directory::init_prototype(func);
     exports->Set(name, func->GetFunction());
 
     name = String::NewFromUtf8(isolate, "startPreviewService");
