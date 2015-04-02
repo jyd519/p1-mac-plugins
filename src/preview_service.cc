@@ -1,6 +1,4 @@
-#include "mac_plugins_priv.h"
-
-#include <bootstrap.h>
+#include "preview_service.h"
 
 namespace p1_mac_plugins {
 
@@ -317,4 +315,4 @@ void preview_client::init_template(Handle<ObjectTemplate> tmpl)
 }
 
 
-}
+}  // namespace p1_mac_plugins

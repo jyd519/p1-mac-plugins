@@ -1,4 +1,6 @@
-#include "mac_plugins_priv.h"
+#include "detect_displays.h"
+
+#include <CoreVideo/CoreVideo.h>
 
 namespace p1_mac_plugins {
 

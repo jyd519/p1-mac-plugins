@@ -1,4 +1,6 @@
-#include "mac_plugins_priv.h"
+#include "detect_audio_inputs.h"
+
+#include <AudioToolbox/AudioToolbox.h>
 
 namespace p1_mac_plugins {
 
@@ -15,8 +17,6 @@ static Local<Value> events_transform(
 static Local<Value> audio_input_infos_to_js(
     Isolate *isolate, audio_input_info *infos,
     uint32_t count, buffer_slicer &slicer);
-static Local<String> v8_string_from_cf_string(
-    Isolate *isolate, CFStringRef str);
 
 static const AudioObjectPropertyAddress system_devices_addr = {
     kAudioHardwarePropertyDevices,
@@ -244,21 +244,6 @@ static Local<Value> audio_input_infos_to_js(
         CFRelease(info.name);
     }
     return arr;
-}
-
-static Local<String> v8_string_from_cf_string(
-    Isolate *isolate, CFStringRef str)
-{
-    auto len = CFStringGetLength(str);
-    auto *ptr = CFStringGetCharactersPtr(str);
-    if (ptr != NULL) {
-        return String::NewFromTwoByte(isolate, ptr, String::kNormalString, len);
-    }
-    else {
-        UniChar buf[len];
-        CFStringGetCharacters(str, CFRangeMake(0, len), buf);
-        return String::NewFromTwoByte(isolate, buf, String::kNormalString, len);
-    }
 }
 
 void detect_audio_inputs::init_prototype(Handle<FunctionTemplate> func)

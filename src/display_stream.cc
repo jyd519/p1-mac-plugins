@@ -1,4 +1,4 @@
-#include "mac_plugins_priv.h"
+#include "display_stream.h"
 
 namespace p1_mac_plugins {
 
