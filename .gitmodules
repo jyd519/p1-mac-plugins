@@ -1,0 +1,3 @@
+[submodule "deps/syphon/Syphon-Framework"]
+	path = deps/syphon/Syphon-Framework
+	url = https://github.com/Syphon/Syphon-Framework.git

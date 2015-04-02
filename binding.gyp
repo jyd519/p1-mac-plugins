@@ -2,6 +2,9 @@
     'targets': [
         {
             'target_name': 'native',
+            'dependencies': [
+                'deps/syphon/syphon.gyp:Syphon'
+            ],
             'include_dirs': [
                 '$(p1stream_include_dir)'
             ],
