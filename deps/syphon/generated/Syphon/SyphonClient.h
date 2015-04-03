@@ -28,6 +28,7 @@
  */
 
 #import <Cocoa/Cocoa.h>
+#import <IOSurface/IOSurface.h>
 #import <Quartz/Quartz.h>
 #import <OpenGL/OpenGL.h>
 
@@ -85,7 +86,16 @@
  @param cgl_ctx The CGL context in which the SyphonImage will be valid.
  @returns A SyphonImage representing the live output from the server. YOU ARE RESPONSIBLE FOR RELEASING THIS OBJECT when you are finished with it.
  */
+
 - (SyphonImage *)newFrameImageForContext:(CGLContextObj)cgl_ctx;
+
+/*!
+ Returns an IOSurface representing the current output from the server. The surface may continue to update when you draw with it, but you should not depend on that behaviour: call this method every time you wish to access the current server frame. This object may have GPU resources associated with it and you should not use it once you finished drawing with it.
+
+ @returns An IOSurfaceRef representing the live output from the server.
+ */
+
+- (IOSurfaceRef)surface;
 
 /*!
  Stops the client from receiving any further frames from the server. In garbage-collected applications you must call this method prior to removing strong references to the client. In non-garbage-collected applications, use of this method is optional and releasing all references to the client has the same effect.
