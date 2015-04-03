@@ -4,6 +4,7 @@
 #include "display_link.h"
 #include "display_stream.h"
 #include "preview_service.h"
+#include "syphon_client.h"
 #include "syphon_directory.h"
 
 #include <CoreFoundation/CoreFoundation.h>
@@ -154,6 +155,13 @@ static void init(Handle<Object> exports, Handle<Value> module,
     func->InstanceTemplate()->SetInternalFieldCount(1);
     func->SetClassName(name);
     syphon_directory::init_prototype(func);
+    exports->Set(name, func->GetFunction());
+
+    name = String::NewFromUtf8(isolate, "SyphonClient");
+    func = FunctionTemplate::New(isolate, syphon_client_constructor);
+    func->InstanceTemplate()->SetInternalFieldCount(1);
+    func->SetClassName(name);
+    syphon_client::init_prototype(func);
     exports->Set(name, func->GetFunction());
 
     name = String::NewFromUtf8(isolate, "startPreviewService");

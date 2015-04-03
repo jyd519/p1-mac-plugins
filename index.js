@@ -263,4 +263,39 @@ module.exports = function(app) {
             }
         });
     });
+
+    // Implement syphon client source type.
+    app.store.onCreate('source:video:p1-mac-plugins:syphon-client', function(obj) {
+        obj.activation('native syphon client', {
+            cond: function() {
+                // In addition to the default condition, ensure the server is
+                // detected before we activate the stream.
+                return obj.defaultCond() &&
+                    _.findWhere(app.o('root:p1-mac-plugins').syphonServers, {
+                        serverId: obj.cfg.serverId
+                    });
+            },
+            start: function() {
+                try {
+                    obj._instance = new native.SyphonClient({
+                        serverId: obj.cfg.serverId,
+                        onEvent: function(id, arg) {
+                            obj.handleNativeEvent(obj, id, arg);
+                        }
+                    });
+                }
+                catch (err) {
+                    return obj.fatal(err, "Failed to instantiate SyphonClient");
+                }
+                app.mark();
+            },
+            stop: function() {
+                if (obj._instance) {
+                    obj._instance.destroy();
+                    obj._instance = null;
+                }
+                app.mark();
+            }
+        });
+    });
 };

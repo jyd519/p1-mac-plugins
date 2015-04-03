@@ -14,6 +14,7 @@
                 'src/detect_displays.cc',
                 'src/audio_queue.cc',
                 'src/detect_audio_inputs.cc',
+                'src/syphon_client.mm',
                 'src/syphon_directory.mm',
                 'src/preview_service.cc',
                 'src/module.mm'
